@@ -35,35 +35,14 @@ def raspi_import(path, channels=5):
 
 
 # Import data from bin file
+filename = sys.argv[1] if len(sys.argv) > 1 else r'\Users\bryni\Downloads\foo.bin'
 if __name__ == "__main__":
-    sample_period, data = raspi_import(sys.argv[1] if len(sys.argv) > 1
-            else r'\Users\bryni\Downloads\foo.bin')
+    sample_period, data = raspi_import(filename)
 
 sample_time = np.arange(0, sample_period*1000, sample_period)
 
 print(sample_period)
 print(data)
 
-data[0] = data[1]
-
-for i in range(len(data)):
-    for j in range(len(data[i])):
-        data[i][j] = data[i][j]*3.3/4096
-        data[i][j] += j
-
-data0 = np.zeros(1000)
-for i in range(len(data[0])):
-    data0[i] = data[0][j]
-
-frequencies = np.arange(0, 1000)
-FFT1 = np.fft.fft(data0)
-
-
-fig, ax = plt.subplots(2)
-ax[0].plot(sample_time, data)
-ax[1].plot(frequencies, FFT1)
-plt.show()
-
-
-#plt.show()
-
+#Export data with timestamps to csv file
+np.savetxt(f"{filename}.csv", np.column_stack((sample_time, data)), delimiter=',', header='Time, Channel 1, Channel 2, Channel 3, Channel 4, Channel 5', comments='', fmt='%1.4e')
