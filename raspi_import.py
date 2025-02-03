@@ -64,6 +64,5 @@ ax[0].plot(sample_time, data)
 ax[1].plot(frequencies, FFT1)
 plt.show()
 
-
 #plt.show()
 
