@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import os
 
 
 def raspi_import(path, channels=5):
@@ -9,40 +10,47 @@ def raspi_import(path, channels=5):
 
     Returns sample period and a (`samples`, `channels`) `float64` array of
     sampled data from all `channels` channels.
-
-    Example (requires a recording named `foo.bin`):
-    ```
-    >>> from raspi_import import raspi_import
-    >>> sample_period, data = raspi_import('foo.bin')
-    >>> print(data.shape)
-    (31250, 5)
-    >>> print(sample_period)
-    3.2e-05
-
-    ```
     """
-
     with open(path, 'r') as fid:
         sample_period = np.fromfile(fid, count=1, dtype=float)[0]
         data = np.fromfile(fid, dtype='uint16').astype('float64')
-        # The "dangling" `.astype('float64')` casts data to double precision
-        # Stops noisy autocorrelation due to overflow
         data = data.reshape((-1, channels))
 
-    # sample period is given in microseconds, so this changes units to seconds
+    # Convert sample period to seconds
     sample_period *= 1e-6
     return sample_period, data
 
 
-# Import data from bin file
-filename = sys.argv[1] if len(sys.argv) > 1 else r'\Users\bryni\Downloads\foo.bin'
+# Define file paths
+script_dir = os.path.dirname(os.path.abspath(__file__))  # Get script directory
+bin_dir = os.path.join(script_dir, "bin")  # Bin folder path
+csv_dir = os.path.join(script_dir, "csv")  # CSV folder path
+
+# Ensure CSV directory exists
+os.makedirs(csv_dir, exist_ok=True)
+
+# Get the first argument or use a default filename
+filename = sys.argv[1] if len(sys.argv) > 1 else "foo.bin"
+bin_path = os.path.join(bin_dir, filename)
+
 if __name__ == "__main__":
-    sample_period, data = raspi_import(filename)
+    sample_period, data = raspi_import(bin_path)
 
-sample_time = np.arange(0, sample_period*1000, sample_period)
+    # Generate time array
+    sample_time = np.arange(0, sample_period * len(data), sample_period)
 
-print(sample_period)
-print(data)
+    # Construct CSV file path
+    csv_filename = os.path.splitext(filename)[0] + ".csv"
+    csv_path = os.path.join(csv_dir, csv_filename)
 
-#Export data with timestamps to csv file
-np.savetxt(f"{filename}.csv", np.column_stack((sample_time, data)), delimiter=',', header='Time, Channel 1, Channel 2, Channel 3, Channel 4, Channel 5', comments='', fmt='%1.4e')
+    # Export data to CSV
+    np.savetxt(
+        csv_path,
+        np.column_stack((sample_time, data)),
+        delimiter=',',
+        header='Time, Channel 1, Channel 2, Channel 3, Channel 4, Channel 5',
+        comments='',
+        fmt='%1.4e'
+    )
+
+    print(f"Data saved to {csv_path}")
