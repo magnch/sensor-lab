@@ -25,8 +25,9 @@ script_dir = os.path.dirname(os.path.abspath(__file__))  # Get script directory
 bin_dir = os.path.join(script_dir, "bin")  # Bin folder path
 
 # Get the first argument or use a default filename
-filename = sys.argv[1] if len(sys.argv) > 1 else "test.bin"
+filename = sys.argv[1] if len(sys.argv) > 1 else "output_100.bin"
 bin_path = os.path.join(bin_dir, filename)
+
 
 if __name__ == "__main__":
     sample_period, rawdata = raspi_import(bin_path)
@@ -37,25 +38,38 @@ if __name__ == "__main__":
 # Første datapunktet blir alltid feil, sletter det
 rawdata[0] = rawdata[1]
 
-data1 = np.zeros(1000)
-data_perfect = np.zeros(1000)
+data1 = np.zeros(len(rawdata))
 # Justerer verdiene så de blir riktige og drar linjene fra hverandre
 for i in range(len(rawdata)):
     data1[i] = rawdata[i][0]*3.3/4096
-data_perfect = np.cos(96.7*2*np.pi*sample_time)/1.67 + 1.2
-    
-print(data1)
+
+with open('csv/input_scope_100.csv', newline='') as csvfile:
+    compare_data = list(csv.reader(csvfile))
+
+offset = 40
+cutoff_compare = 8000
+data_compare = np.zeros(cutoff_compare)
+time_compare = np.zeros(cutoff_compare)
+for i in range(offset, cutoff_compare+offset):
+    data_compare[i-offset] = compare_data[i][1]
+    time_compare[i-offset] = float(compare_data[i][0])+0.04825
+
+cutoff_original = 3000
+sample_time_cut = sample_time[:cutoff_original]
+data1_cut = data1[:cutoff_original]
 
 # Plotter dataene og FFTen
 fig, ax = plt.subplots(2)
 ax[0].set_xlabel("Tid (s)")
 ax[0].set_ylabel("Amplitude (V)")
-ax[0].set_title("Målt signal sammenlignet med teoretisk signal")
-ax[0].plot(sample_time, data1)
-ax[0].plot(sample_time,data_perfect, "r")
-ax[1].set_xlabel("Frekvens (Hz)")
-ax[1].set_ylabel("Amplitude (dB)")
-ax[1].set_title("Feil i målt signal")
-ax[1].plot(sample_time,data_perfect-data1, "r")
+ax[0].set_title("Målt signal sammenlignet med signal målt på Analog Discovery 2")
+ax[0].plot(sample_time_cut, data1_cut, label = "Målt signal")
+ax[0].plot(time_compare,data_compare, "r", label = "Signal til sammenligning")
+ax[0].legend(loc="upper right")
+#ax[0].plot(sample_time_cut,(np.cos(2*np.pi*100*(sample_time_cut+0.2))+1), "g")
+ax[1].set_xlabel("Tid (s)")
+ax[1].set_ylabel("Amplitude (V)")
+ax[1].set_title("Feil i målt signal relativ til analog discovery 2")
+ax[1].plot(sample_time_cut,(np.cos(2*np.pi*100*(sample_time_cut+0.2))+1)-data1_cut, "r")
 
 plt.show()
