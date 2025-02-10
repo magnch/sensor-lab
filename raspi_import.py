@@ -66,7 +66,7 @@ for i in range(len(data)):
         data[i][j] += j
 
 # Henter ut og tar FFT av første 
-data0 = np.zeros(1000)
+data0 = np.zeros(len(data))
 hamming_window = np.hamming(len(data))
 for i in range(len(data)):
     data0[i] = data[i][0]*hamming_window[i]
