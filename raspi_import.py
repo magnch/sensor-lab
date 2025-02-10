@@ -67,9 +67,9 @@ for i in range(len(data)):
 
 # Henter ut og tar FFT av første 
 data0 = np.zeros(1000)
-hamming_window = np.hamming(len(data[0]))
-for i in range(len(data[0])):
-    data0[i] = data[0][j]*hamming_window[i]
+hamming_window = np.hamming(len(data))
+for i in range(len(data)):
+    data0[i] = data[i][0]*hamming_window[i]
 FFT1 = np.fft.fft(data0)
 
 # Lager en arange med frekvensene i FFTen
