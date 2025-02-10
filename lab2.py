@@ -5,25 +5,20 @@ import matplotlib.pyplot as plt
 Legg inn kode for å importere data fra csv
 Bruker midlertidige dummy arrays
 '''
+fs = 1000
 
-x = [0, 1, 2, 3, 2, 1, 0]
-y = [0, 0, 0, 0, 1, 2, 3, 2, 1, 0, -1, -2, -3, -2, -1, 0]
+t = np.linspace(0, 1, fs)
+x = np.sin(2 * np.pi * 10 * t)
+y = np.cos(2 * np.pi * 10 * t)
 
-# Calculate the cross-correlation of x and y
-cross_correlation = np.correlate(x, y, mode='full')
+def calculate_delay(x, y, fs):
 
-# Calculate the autocorrelation of x
-auto_correlation = np.correlate(x, x, mode="full")
+    r_xy = np.correlate(x, y, mode="full")
+    samples = np.arange(-len(x) + 1, len(y))
+    max_sample = samples[np.argmax(np.abs(r_xy))]
+    delay = max_sample / fs
+    return delay
 
-# Create lag arrays
-lags_auto = np.arange(-len(x) + 1, len(x))
-lags_cross = np.arange(-len(x) + 1, len(y))
 
-# Plot both the cross-correlation and the autocorrelation
-fig, ax = plt.subplots(2)
-ax[0].stem(lags_auto, auto_correlation)
-ax[0].set_title('Auto-correlation of x')
-ax[1].stem(lags_cross, cross_correlation)
-ax[1].set_title('Cross-correlation of x and y')
-plt.tight_layout()
-plt.show()
+
+print(calculate_delay(x, y, fs))

@@ -15,6 +15,7 @@ def raspi_import(path, channels=5):
         sample_period = np.fromfile(fid, count=1, dtype=float)[0]
         data = np.fromfile(fid, dtype='uint16').astype('float64')
         data = data.reshape((-1, channels))
+        data[0] = data[1]
 
     # Convert sample period to seconds
     sample_period *= 1e-6
@@ -54,36 +55,3 @@ if __name__ == "__main__":
     )
 
     print(f"Data saved to {csv_path}")
-
-
-# Første datapunktet blir alltid feil, sletter det
-data[0] = data[1]
-
-# Justerer verdiene så de blir riktige og drar linjene fra hverandre
-for i in range(len(data)):
-    for j in range(len(data[i])):
-        data[i][j] = data[i][j]*3.3/4096
-        data[i][j] += j
-
-# Henter ut og tar FFT av første 
-data0 = np.zeros(1000)
-hamming_window = np.hamming(len(data[0]))
-for i in range(len(data[0])):
-    data0[i] = data[0][j]*hamming_window[i]
-FFT1 = np.fft.fft(data0)
-
-# Lager en arange med frekvensene i FFTen
-frequencies = np.arange(0, len(FFT1))
-
-# Plotter dataene og FFTen
-fig, ax = plt.subplots(2)
-ax[0].set_xlabel("Tid (s)")
-ax[0].set_ylabel("Amplitude (V)")
-ax[0].set_title("Plott av målinger, 1V offset")
-ax[0].plot(sample_time, data)
-ax[1].set_xlabel("Frekvens (Hz)")
-ax[1].set_ylabel("Amplitude (dB)")
-ax[1].set_title("FFT av første måling")
-ax[1].plot(frequencies, 20*np.log10(FFT1))
-#ax[1].plot(frequencies, FFT1)
-plt.show()
