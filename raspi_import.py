@@ -30,7 +30,7 @@ csv_dir = os.path.join(script_dir, "csv")  # CSV folder path
 os.makedirs(csv_dir, exist_ok=True)
 
 # Get the first argument or use a default filename
-filename = sys.argv[1] if len(sys.argv) > 1 else "foo.bin"
+filename = sys.argv[1] if len(sys.argv) > 1 else "test.bin"
 bin_path = os.path.join(bin_dir, filename)
 
 if __name__ == "__main__":
@@ -67,9 +67,9 @@ for i in range(len(data)):
 
 # Henter ut og tar FFT av første 
 data0 = np.zeros(1000)
-hanning_window = np.hanning(len(data[0]))
+hamming_window = np.hamming(len(data[0]))
 for i in range(len(data[0])):
-    data0[i] = data[0][j]*hanning_window[i]
+    data0[i] = data[0][j]*hamming_window[i]
 FFT1 = np.fft.fft(data0)
 
 # Lager en arange med frekvensene i FFTen
