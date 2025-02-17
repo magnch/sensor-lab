@@ -221,10 +221,15 @@ def window_csv(filename, window=0):
 
     print(f"Data saved to {csv_path}")
 
-# Plot the cross-correlation of two signals, with max value and lag
-def plot_correlation(x, y, fs=32150):
+# Returns the cross-correlation of two signals, and an array of lags
+def cross_correlate(x, y):
     r_xy = np.correlate(x, y, mode="full")
     samples = np.arange(-len(x) + 1, len(y))
+    return r_xy, samples
+
+# Plot the cross-correlation of two signals, with max value and lag
+def plot_correlation(x, y, fs=32150):
+    r_xy, samples = cross_correlate(x, y)
 
     max_value = np.max(np.abs(r_xy))
     max_sample = samples[np.argmax(np.abs(r_xy))]
@@ -243,8 +248,7 @@ def plot_correlation(x, y, fs=32150):
 # Calculate delay between two signals using cross-correlation
 def calculate_delay(x, y, fs=32150):
 
-    r_xy = np.correlate(x, y, mode="full")
-    samples = np.arange(-len(x) + 1, len(y))
+    r_xy, samples = cross_correlate(x, y)
     max_sample = samples[np.argmax(np.abs(r_xy))]
     delay = max_sample / fs
     return delay

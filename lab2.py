@@ -1,6 +1,12 @@
 from utilitites import *
 
 '''
+Start med lave frekvenser [400, 5000]
+Sjekk frekvenser helt ned til øvre og nedre grenser 
+
+'''
+
+'''
 Legg inn kode for å importere data fra csv
 Bruker midlertidige dummy arrays
 '''
