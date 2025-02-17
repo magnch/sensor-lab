@@ -1,5 +1,4 @@
-import numpy as np
-import matplotlib.pyplot as plt
+from utilitites import *
 
 '''
 Legg inn kode for å importere data fra csv
@@ -7,18 +6,12 @@ Bruker midlertidige dummy arrays
 '''
 fs = 1000
 
-t = np.linspace(0, 1, fs)
+t = np.linspace(0, 0.1, fs)
 x = np.sin(2 * np.pi * 10 * t)
 y = np.cos(2 * np.pi * 10 * t)
 
-def calculate_delay(x, y, fs):
-
-    r_xy = np.correlate(x, y, mode="full")
-    samples = np.arange(-len(x) + 1, len(y))
-    max_sample = samples[np.argmax(np.abs(r_xy))]
-    delay = max_sample / fs
-    return delay
-
+# Plot cross-correlation
+plot_correlation(x, y, fs)
 
 
 print(calculate_delay(x, y, fs))
