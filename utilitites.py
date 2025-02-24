@@ -31,15 +31,21 @@ def raspi_import(path, channels=5):
     sample_period *= 1e-6
     return sample_period, data
 
-# Plot imported adc data
-def adc_plot(filename, start_ms=0, stop_ms=0):
-    # Import data
-    fs = 31250
+# Import ADC data from csv file, returns time and voltages
+def adc_import(filename):
+    
     csv_path = os.path.join(csv_dir, filename)
     data = np.loadtxt(csv_path, delimiter=",", skiprows=1)
     time = data[:, 0] * 1e3  # Convert to ms
     channels = data[:, 1:]
     voltages = channels * 3.3 / 4095
+    return time, voltages
+
+# Plot imported adc data
+def adc_plot(filename, start_ms=0, stop_ms=0, fs=31250):
+
+    time, voltages = adc_import(filename)
+
     start_sample = int(start_ms * fs / 1e3) if start_ms else None
     stop_sample = int(stop_ms * fs / 1e3) if stop_ms else None
 
@@ -222,21 +228,32 @@ def window_csv(filename, window=0):
     print(f"Data saved to {csv_path}")
 
 # Returns the cross-correlation of two signals, and an array of lags
-def cross_correlate(x, y):
+def cross_correlate(x, y, start_sample=200):
+    if start_sample:
+        x = x[start_sample:]
+        y = y[start_sample:]
+
     r_xy = np.correlate(x, y, mode="full")
-    samples = np.arange(-len(x) + 1, len(y))
-    return r_xy, samples
+    r_xy /= np.max(np.abs(r_xy)) # Normalize
+    lags = np.arange(-len(x) + 1, len(y))
+    return r_xy, lags
 
 # Plot the cross-correlation of two signals, with max value and lag
-def plot_correlation(x, y, fs=32150):
-    r_xy, samples = cross_correlate(x, y)
+def plot_correlation(x, y, start_sample=200, limit=0):
+    r_xy, lags = cross_correlate(x, y, start_sample)
+
+    # Limit number of samples around center
+    if limit:
+        center = len(lags) // 2
+        lags = lags[center - limit:center + limit + 1]
+        r_xy = r_xy[center - limit:center + limit + 1]
 
     max_value = np.max(np.abs(r_xy))
-    max_sample = samples[np.argmax(np.abs(r_xy))]
+    max_sample = lags[np.argmax(np.abs(r_xy))]
 
 
     plt.figure()
-    plt.plot(samples, r_xy)
+    plt.plot(lags, r_xy)
     plt.plot(max_sample, max_value, "ro", label=f"Max value: {max_value:.2f} at l = {max_sample}")
     plt.title("Cross-correlation")
     plt.xlabel("Lag [samples]")
@@ -245,10 +262,76 @@ def plot_correlation(x, y, fs=32150):
     plt.legend()
     plt.show()
 
-# Calculate delay between two signals using cross-correlation
-def calculate_delay(x, y, fs=32150):
+# Plot the cross-correlation of all three microphones, with max values and lags
+def plot_correlation_all(m1, m2, m3, limit=0, start_sample=200):
 
-    r_xy, samples = cross_correlate(x, y)
+
+    # Calculate cross-correlation
+    r12, lags = cross_correlate(m1, m2, start_sample)
+    r13, lags = cross_correlate(m1, m3, start_sample)
+    r23, lags = cross_correlate(m2, m3, start_sample)
+
+    # Limit number of samples around center
+    if limit:
+        center = len(lags) // 2
+        lags = lags[center - limit:center + limit + 1]
+        r12 = r12[center - limit:center + limit + 1]
+        r13 = r13[center - limit:center + limit + 1]
+        r23 = r23[center - limit:center + limit + 1]
+
+    # Find max values and lags
+    max12 = np.max(np.abs(r12))
+    max13 = np.max(np.abs(r13))
+    max23 = np.max(np.abs(r23))
+
+    max_sample12 = lags[np.argmax(np.abs(r12))]
+    max_sample13 = lags[np.argmax(np.abs(r13))]
+    max_sample23 = lags[np.argmax(np.abs(r23))]
+
+    # Plot
+    fig, ax = plt.subplots(3, figsize=(10, 15))
+    ax[0].plot(lags, r12)
+    ax[0].plot(max_sample12, max12, "ro", label=f"Max value: {max12:.2f} at l = {max_sample12}")
+    ax[0].set_title("Cross-correlation between M1 and M2")
+    ax[0].set_xlabel("Lag [samples]")
+    ax[0].set_ylabel("r_12")
+    ax[0].grid()
+    ax[0].legend()
+
+    ax[1].plot(lags, r13)
+    ax[1].plot(max_sample13, max13, "ro", label=f"Max value: {max13:.2f} at l = {max_sample13}")
+    ax[1].set_title("Cross-correlation between M1 and M3")
+    ax[1].set_xlabel("Lag [samples]")
+    ax[1].set_ylabel("r_13")
+    ax[1].grid()
+    ax[1].legend()
+
+    ax[2].plot(lags, r23)
+    ax[2].plot(max_sample23, max23, "ro", label=f"Max value: {max23:.2f} at l = {max_sample23}")
+    ax[2].set_title("Cross-correlation between M2 and M3")
+    ax[2].set_xlabel("Lag [samples]")
+    ax[2].set_ylabel("r_23")
+    ax[2].grid()
+    ax[2].legend()
+
+    plt.tight_layout()
+    path = os.path.join(plot_dir, "cross_correlation.png")
+    plt.savefig(path)
+
+# Calculate delay in samples between two signals using cross-correlation
+def calculate_delay(x, y, start_sample = 200):
+    r_xy, samples = cross_correlate(x, y, start_sample=200)
     max_sample = samples[np.argmax(np.abs(r_xy))]
-    delay = max_sample / fs
-    return delay
+    return max_sample
+
+# Calculate delay in milliseconds between two signals using cross-correlation
+def calculate_delay_ms(x, y, fs=31250, start_sample=200):
+    return calculate_delay(x, y) * (1000/fs)
+
+# Calculates the incident angle of an incoming sound wave, in degrees
+def calculate_angle(m1, m2, m3, start_sample=200):
+    n21 = calculate_delay(m2, m1)
+    n31 = calculate_delay(m3, m1)
+    n32 = calculate_delay(m3, m2)
+    arg = np.sqrt(3) * (n21 + n31) / (n21 - n31 - 2*n32)
+    return np.arctan2(1, arg) * (180/np.pi) # Convert to degrees
