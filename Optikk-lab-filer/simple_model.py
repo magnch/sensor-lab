@@ -34,3 +34,7 @@ musr = 100 * (17.6*(wavelength/500)**-4 + 18.78*(wavelength/500)**-0.22)
 # Red, green and blue correspond to indexes 0, 1 and 2, respectively
 
 # TODO calculate penetration depth
+
+pen_depth = np.sqrt(1/(3(musr+mua)*mua))
+
+print(pen_depth)
