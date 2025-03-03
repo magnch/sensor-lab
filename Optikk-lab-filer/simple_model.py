@@ -1,12 +1,12 @@
 import numpy as np
 
 
-muabo = np.genfromtxt("./muabo.txt", delimiter=",")
-muabd = np.genfromtxt("./muabd.txt", delimiter=",")
+muabo = np.genfromtxt("Optikk-lab-filer\muabo.txt", delimiter=",") 
+muabd = np.genfromtxt("Optikk-lab-filer\muabd.txt", delimiter=",")
 
-red_wavelength = None # Replace with wavelength in nanometres
-green_wavelength = None # Replace with wavelength in nanometres
-blue_wavelength = None # Replace with wavelength in nanometres
+red_wavelength = 600 # Replace with wavelength in nanometres
+green_wavelength = 520 # Replace with wavelength in nanometres
+blue_wavelength = 465 # Replace with wavelength in nanometres
 
 wavelength = np.array([red_wavelength, green_wavelength, blue_wavelength])
 
@@ -35,6 +35,6 @@ musr = 100 * (17.6*(wavelength/500)**-4 + 18.78*(wavelength/500)**-0.22)
 
 # TODO calculate penetration depth
 
-pen_depth = np.sqrt(1/(3(musr+mua)*mua))
+pen_depth = np.sqrt(1/(3*(musr+mua)*mua))
 
 print(pen_depth)
