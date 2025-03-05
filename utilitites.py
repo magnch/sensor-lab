@@ -228,14 +228,21 @@ def window_csv(filename, window=0):
     print(f"Data saved to {csv_path}")
 
 # Returns the cross-correlation of two signals, and an array of lags
-def cross_correlate(x, y, start_sample=200):
+def cross_correlate(x, y, start_sample=200, limit=0):
     if start_sample:
         x = x[start_sample:]
         y = y[start_sample:]
 
+
     r_xy = np.correlate(x, y, mode="full")
     r_xy /= np.max(np.abs(r_xy)) # Normalize
     lags = np.arange(-len(x) + 1, len(y))
+
+    if limit:
+        center = len(lags) // 2
+        lags = lags[center - limit:center + limit + 1]
+        r_xy = r_xy[center - limit:center + limit + 1]
+        
     return r_xy, lags
 
 # Plot the cross-correlation of two signals, with max value and lag
@@ -319,9 +326,10 @@ def plot_correlation_all(m1, m2, m3, limit=0, start_sample=200):
     plt.savefig(path)
 
 # Calculate delay in samples between two signals using cross-correlation
-def calculate_delay(x, y, start_sample = 200):
-    r_xy, samples = cross_correlate(x, y, start_sample=200)
+def calculate_delay(x, y, start_sample = 200, limit=0):
+    r_xy, samples = cross_correlate(x, y, start_sample=200, limit=limit)
     max_sample = samples[np.argmax(np.abs(r_xy))]
+    #print(f"Delay in samples: {max_sample}")
     return max_sample
 
 # Calculate delay in milliseconds between two signals using cross-correlation
@@ -330,8 +338,15 @@ def calculate_delay_ms(x, y, fs=31250, start_sample=200):
 
 # Calculates the incident angle of an incoming sound wave, in degrees
 def calculate_angle(m1, m2, m3, start_sample=200):
-    n21 = calculate_delay(m2, m1)
-    n31 = calculate_delay(m3, m1)
-    n32 = calculate_delay(m3, m2)
-    arg = np.sqrt(3) * (n21 + n31) / (n21 - n31 - 2*n32)
-    return np.arctan2(1, arg) * (180/np.pi) # Convert to degrees
+    n21 = calculate_delay(m2, m1, limit=5)
+    n31 = calculate_delay(m3, m1, limit=5)
+    n32 = calculate_delay(m3, m2, limit=5)
+    den = (n31- n21 + 2*n32)
+    num = np.sqrt(3) * (n31 + n21)
+    angle = np.arctan2(num, den) * (180/np.pi)
+
+    angle += 180
+    if angle >= 360:
+        angle -= 360
+
+    return  angle
