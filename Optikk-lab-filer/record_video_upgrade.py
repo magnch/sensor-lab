@@ -20,6 +20,9 @@ from picamera2.encoders import H264Encoder
 from time import sleep
 import sys
 
+# how long we want to record
+recordTime = sys.argv[2] if len(sys.argv) > 2 else 10
+
 # Print usage instructions
 if len(sys.argv) < 2:
         print('Usage: python ' + sys.argv[0] + ' [path to filename]')
@@ -75,9 +78,6 @@ camera.awb_gains = (1, 2)
 #
 # See https://picamera.readthedocs.io/en/release-1.10/api_camera.html for description of properties,
 # and inspiration for other properties to adjust.
-
-# how long we want to record
-recordTime = 30
 
 # If we were not running the Pi headless, starting the preview would show us
 # what the camera was capturing.  Now, since we run it headless, it allows the
