@@ -37,4 +37,35 @@ musr = 100 * (17.6*(wavelength/500)**-4 + 18.78*(wavelength/500)**-0.22)
 
 pen_depth = np.sqrt(1/(3*(musr+mua)*mua))
 
-print(pen_depth)
+#d = 0.0171
+d = 3e-4
+
+C = np.sqrt(3*(musr+mua)*mua)
+
+print(f"Penetrasjonsdybde: \n Rødt: {pen_depth[0]}, Grønt: {pen_depth[1]}, Blått: {pen_depth[2]}")
+
+transmittans = np.e**(-C*d)
+
+print(f"Transmittans: \n Rødt: {transmittans[0]}, Grønt: {transmittans[1]}, Blått: {transmittans[2]}")
+
+reflektans = np.sqrt(3*((musr/mua)+1))
+
+print(f"Reflektans: \n Rødt: {reflektans[0]}, Grønt: {reflektans[1]}, Blått: {reflektans[2]}")
+
+mu_0 = 1/(2*pen_depth*mua)
+
+z = -np.log(0.5)/C
+
+print(f"Probet dybde reflektans: \n Rødt: {z[0]}, Grønt: {z[1]}, Blått: {z[2]}")
+
+
+# Transmittans-resultater med 100% blodfraksjon og 300um:
+# 15.2% 0.13% 0.012%
+#
+# Transmittans-resultater med 1% blodfraksjon og 300um:
+# 82.6% 69.8% 63.0%
+#
+# Kontrast
+# 1:5.4 1:536.9 1:5250
+#
+# Blått kommer til å fungere mest
