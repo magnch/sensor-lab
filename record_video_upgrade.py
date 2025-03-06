@@ -21,7 +21,7 @@ from time import sleep
 import sys
 
 # how long we want to record
-recordTime = sys.argv[2] if len(sys.argv) > 2 else 10
+recordTime = int(sys.argv[2]) if len(sys.argv) > 2 else 10
 
 # Print usage instructions
 if len(sys.argv) < 2:
@@ -36,7 +36,7 @@ if len(sys.argv) < 2:
 # Split the root from the extension, ensure correct output file extension
 DEFAULT_FILE_EXTENSION = '.h264'
 root, extension = os.path.splitext(sys.argv[1])
-root = "/mp4/" + root
+root = "./mp4/" + root
 if extension != DEFAULT_FILE_EXTENSION:
         extension = DEFAULT_FILE_EXTENSION
 h264_filename = root + extension
