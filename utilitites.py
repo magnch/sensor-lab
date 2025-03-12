@@ -461,9 +461,21 @@ def bandpass_filter(data, f_low, f_high, fs=30, order=4):
 
     b, a = butter(order, [low, high], btype="band")
     y = lfilter(b, a, data)
+    y = y/np.max(y)
 
     return y
 
+# Extract peak from RGB FFT data
+def extract_peak_rgb(r, g, b, f, f_min, f_max, fs=30):
+    mask = (f >= f_min) & (f <= f_max)
+    r_peak = np.argmax(r[mask]) * 60 # Convert to BPM
+    g_peak = np.argmax(g[mask]) * 60 # Convert to BPM
+    b_peak = np.argmax(b[mask]) * 60 # Convert to BPM
 
+    return r_peak, g_peak, b_peak
 
+def calculate_mean_and_std(data):
+    mean = np.mean(data)
+    std = np.std(data)
+    return mean, std
 #-------------------------------------------------------------------------------------------------------
