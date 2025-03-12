@@ -350,3 +350,73 @@ def calculate_angle(m1, m2, m3, start_sample=200):
         angle -= 360
 
     return  angle
+
+
+
+def import_rgb(filename):
+    csv_path = os.path.join(csv_dir, filename)
+    data = np.loadtxt(csv_path, delimiter=" ", skiprows=0)
+    data[0] = data[1] #Får rar verdi på første frame
+    red = data[:, 0]
+    blue = data[:, 1]
+    green = data[:, 2]
+    print(red)
+    print(red.shape)
+    return red, green, blue
+
+def rgb_fft(red, green, blue, N=4096):
+    fs = 30
+    red_fft = np.fft.fft(red)
+    green_fft = np.fft.fft(green)
+    blue_fft = np.fft.fft(blue)
+    freqs = np.fft.fftfreq(len(red), 1/fs)
+
+    return freqs, red_fft, green_fft, blue_fft
+
+
+def plot_rgb(red, green, blue):
+    frames = np.arange(0, len(red))
+    #duration = frames/30
+    fig, ax = plt.subplots(3, 1)
+    ax[0].plot(frames, np.abs(red), color="red", label="R")
+    ax[0].set_xlabel("Frames")
+    ax[0].set_ylabel("Value")
+    ax[0].legend()
+    ax[1].plot(frames, np.abs(green), color="green", label="G")
+    ax[1].set_xlabel("Frames")
+    ax[1].set_ylabel("Value")
+    ax[1].legend()
+    ax[2].plot(frames, np.abs(blue), color="blue", label="B")
+    ax[2].set_xlabel("Frames")
+    ax[2].set_ylabel("Value")
+    ax[2].legend()
+    plt.tight_layout()
+    plt.show()
+
+def plot_rgb_fft(freqs, red, green, blue, f_min=0.5, f_max=4):
+    fs = 30
+    #start = int(f_min*fs)
+    #stop = int(f_max*fs)
+    start = 0
+    stop = 0
+    if start and stop:
+        freqs = freqs[start:stop]
+        red = red[start:stop]
+        green = green[start:stop]
+        blue = blue[start:stop]
+    
+    fig, ax = plt.subplots(3, 1)
+    ax[0].plot(freqs, red, color="red", label="R")
+    ax[0].set_xlabel("f")
+    ax[0].set_ylabel("Amplitude")
+    ax[0].legend()
+    ax[1].plot(freqs, green, color="green", label="G")
+    ax[1].set_xlabel("f")
+    ax[1].set_ylabel("Amplitude")
+    ax[1].legend()
+    ax[2].plot(freqs, blue, color="blue", label="B")
+    ax[2].set_xlabel("f")
+    ax[2].set_ylabel("Amplitude")
+    ax[2].legend()
+    plt.tight_layout()
+    plt.show()
