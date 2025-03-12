@@ -1,17 +1,47 @@
 from utilitites import *
 
-filename = "transmittans_120_måling"
+filebase = "transmittans_måling_"
 
-r, g, b = import_rgb(filename)
+rgb_peaks = np.zeros((5, 3))
+filter = True
 
-r_filtered = bandpass_filter(r, 0.5, 4)
-g_filtered = bandpass_filter(g, 0.5, 4)
-b_filtered = bandpass_filter(b, 0.5, 4)
+for i in range(5):
+    filename = filebase + str(i+1) + ".csv"
+    r, g, b = import_rgb(filename)
 
-plot_rgb(r, g, b)
-plot_rgb(r_filtered, g_filtered, b_filtered)
+    if filter:
+        r = bandpass_filter(r)
+        g = bandpass_filter(g)
+        b = bandpass_filter(b)
 
-freqs, red_fft, green_fft, blue_fft = rgb_fft(r, g, b, N=4096*4)
-freqs, red_filtered_fft, green_filtered_fft, blue_filtered_fft = rgb_fft(r_filtered, g_filtered, b_filtered, N=4096*4)
-plot_rgb_fft(freqs, red_fft, green_fft, blue_fft)
-plot_rgb_fft(freqs, red_filtered_fft, green_filtered_fft, blue_filtered_fft)
+    freqs, r_f, g_f, b_f = rgb_fft(r, g, b)
+    plot_rgb(r, g, b, filename)
+    print(f"Data for {filename} plotted.")
+    plot_rgb_fft(freqs, r_f, g_f, b_f, filename, f_min=0.5, f_max=2.5)
+    print(f"FFT for {filename} plotted.")
+    print("---------------------------------------------------")
+    rgb_peaks[i] = extract_peak_rgb(freqs, r_f, g_f, b_f, f_min=0.5, f_max=2.5)
+
+for maling in ["lys", "hoy_puls"]:
+    filename = "robusthet_" + maling + ".csv" 
+    r, g, b = import_rgb(filename)
+
+    if filter:
+        r = bandpass_filter(r)
+        g = bandpass_filter(g)
+        b = bandpass_filter(b)
+
+    freqs, r_f, g_f, b_f = rgb_fft(r, g, b)
+    plot_rgb(r, g, b, filename)
+    print(f"Data for {filename} plotted.")
+    plot_rgb_fft(freqs, r_f, g_f, b_f, filename)
+    print(f"FFT for {filename} plotted.")
+    print("---------------------------------------------------")
+
+
+for i, color in enumerate(["R", "G", "B"]):
+    # Calculate mean and std for each color
+    mean, std = calculate_mean_and_std(rgb_peaks[:, i])
+    print(f"Mean for {color}: {mean:.2f}")
+    print(f"Std for {color}: {std:.2f}")
+

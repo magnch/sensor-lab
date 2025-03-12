@@ -34,9 +34,9 @@ def raspi_import(path, channels=5):
     sample_period *= 1e-6
     return sample_period, data
 
-# Import ADC data from csv file, returns time and voltages
-def adc_import(filename):
-    
+# Import ADC data from csv file, returns time and voltages. Specify lab number
+def adc_import(filename, lab_num=1):
+    filename = f"lab{lab_num}\\" + filename
     csv_path = os.path.join(csv_dir, filename)
     data = np.loadtxt(csv_path, delimiter=",", skiprows=1)
     time = data[:, 0] * 1e3  # Convert to ms
@@ -366,6 +366,7 @@ def calculate_angle(m1, m2, m3, start_sample=200):
 
 # Import RGB data from csv file
 def import_rgb(filename):
+    filename = "lab3\\" + filename
     csv_path = os.path.join(csv_dir, filename)
     data = np.loadtxt(csv_path, delimiter=" ", skiprows=0)
     data[0] = data[1] #Får rar verdi på første frame
@@ -382,7 +383,7 @@ def remove_rgb_offset(r, g, b):
     return r, g, b
 
 # Take the FFT of RGB data
-def rgb_fft(r, g, b, N=4096):
+def rgb_fft(r, g, b, N=16384):
     fs = 30
     #r, g, b = remove_rgb_offset(r, g, b)
     r_fft = np.fft.fft(r, n=N)
@@ -393,7 +394,7 @@ def rgb_fft(r, g, b, N=4096):
     return freqs, r_fft, g_fft, b_fft
 
 # Plot RGB data over frames
-def plot_rgb(r, g, b):
+def plot_rgb(r, g, b, save=True, filename="rgb_vals"):
     frames = np.arange(0, len(r))
     #duration = frames/30
     fig, ax = plt.subplots(3, 1)
@@ -410,10 +411,14 @@ def plot_rgb(r, g, b):
     ax[2].set_ylabel("Value")
     ax[2].legend()
     plt.tight_layout()
-    plt.show()
+
+    if save:
+        plt.savefig(plot_dir + "\\lab3\\" + filename[:-4] + ".png")
+    else:
+        plt.show()
 
 # Plot the FFT of RGB data over BPM
-def plot_rgb_fft(freqs, r, g, b, f_min=0.5, f_max=4):
+def plot_rgb_fft(freqs, r, g, b, save=True, filename="rgb_fft", f_min=0.5, f_max=4):
     
     # Normalize
     r = r/np.max(r)
@@ -449,10 +454,14 @@ def plot_rgb_fft(freqs, r, g, b, f_min=0.5, f_max=4):
         ax[i].set_xticklabels([f"{int(bpm)}" for bpm in bpm_ticks])  
 
     plt.tight_layout()
-    plt.show()
+
+    if save:
+        plt.savefig(plot_dir + "\\lab3\\" + filename[:-4] + "_fft.png")
+    else:
+        plt.show()
 
 # Filter RGB data using a bandpass filter (made in CoPilot)
-def bandpass_filter(data, f_low, f_high, fs=30, order=4):
+def bandpass_filter(data, f_low=0.5, f_high=4, fs=30, order=4):
     from scipy.signal import butter, lfilter
 
     nyquist = 0.5 * fs
@@ -466,14 +475,16 @@ def bandpass_filter(data, f_low, f_high, fs=30, order=4):
     return y
 
 # Extract peak from RGB FFT data
-def extract_peak_rgb(r, g, b, f, f_min, f_max, fs=30):
+def extract_peak_rgb(f, r, g, b, f_min=0.5, f_max=4):
     mask = (f >= f_min) & (f <= f_max)
-    r_peak = np.argmax(r[mask]) * 60 # Convert to BPM
-    g_peak = np.argmax(g[mask]) * 60 # Convert to BPM
-    b_peak = np.argmax(b[mask]) * 60 # Convert to BPM
+    f = f[mask]
+    r_peak = f[np.argmax(np.abs(r[mask]))] * 60 # Convert to BPM
+    g_peak = f[np.argmax(np.abs(g[mask]))] * 60 # Convert to BPM
+    b_peak = f[np.argmax(np.abs(b[mask]))] * 60 # Convert to BPM
 
     return r_peak, g_peak, b_peak
 
+# Calculate mean and standard deviation of RGB peak frequencies (detected pulse)
 def calculate_mean_and_std(data):
     mean = np.mean(data)
     std = np.std(data)
