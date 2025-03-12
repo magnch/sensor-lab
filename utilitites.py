@@ -17,6 +17,9 @@ os.makedirs(plot_dir, exist_ok=True)
 
 # Functions 
 
+# Lab 1
+#-------------------------------------------------------------------------------------------------------
+
 # Import data produced using adc_sampler.c.
 def raspi_import(path, channels=5):
 
@@ -227,6 +230,11 @@ def window_csv(filename, window=0):
 
     print(f"Data saved to {csv_path}")
 
+
+#-------------------------------------------------------------------------------------------------------
+# Lab 2
+#-------------------------------------------------------------------------------------------------------
+
 # Returns the cross-correlation of two signals, and an array of lags
 def cross_correlate(x, y, start_sample=200, limit=0):
     if start_sample:
@@ -352,71 +360,110 @@ def calculate_angle(m1, m2, m3, start_sample=200):
     return  angle
 
 
+#-------------------------------------------------------------------------------------------------------
+# Lab 3
+#-------------------------------------------------------------------------------------------------------
 
+# Import RGB data from csv file
 def import_rgb(filename):
     csv_path = os.path.join(csv_dir, filename)
     data = np.loadtxt(csv_path, delimiter=" ", skiprows=0)
     data[0] = data[1] #Får rar verdi på første frame
-    red = data[:, 0]
-    blue = data[:, 1]
-    green = data[:, 2]
-    print(red)
-    print(red.shape)
-    return red, green, blue
+    r = data[:, 0]
+    g = data[:, 1]
+    b = data[:, 2]
+    return r, g, b
 
-def rgb_fft(red, green, blue, N=4096):
+# Subtract mean value from RGB data
+def remove_rgb_offset(r, g, b):
+    r = r - np.mean(r)
+    g = g - np.mean(g)
+    b = b - np.mean(b)
+    return r, g, b
+
+# Take the FFT of RGB data
+def rgb_fft(r, g, b, N=4096):
     fs = 30
-    red_fft = np.fft.fft(red)
-    green_fft = np.fft.fft(green)
-    blue_fft = np.fft.fft(blue)
-    freqs = np.fft.fftfreq(len(red), 1/fs)
+    #r, g, b = remove_rgb_offset(r, g, b)
+    r_fft = np.fft.fft(r, n=N)
+    g_fft = np.fft.fft(g, n=N)
+    b_fft = np.fft.fft(b, n=N)
+    freqs = np.fft.fftfreq(N, 1/fs)
 
-    return freqs, red_fft, green_fft, blue_fft
+    return freqs, r_fft, g_fft, b_fft
 
-
-def plot_rgb(red, green, blue):
-    frames = np.arange(0, len(red))
+# Plot RGB data over frames
+def plot_rgb(r, g, b):
+    frames = np.arange(0, len(r))
     #duration = frames/30
     fig, ax = plt.subplots(3, 1)
-    ax[0].plot(frames, np.abs(red), color="red", label="R")
+    ax[0].plot(frames, r, color="red", label="R")
     ax[0].set_xlabel("Frames")
     ax[0].set_ylabel("Value")
     ax[0].legend()
-    ax[1].plot(frames, np.abs(green), color="green", label="G")
+    ax[1].plot(frames, g, color="green", label="G")
     ax[1].set_xlabel("Frames")
     ax[1].set_ylabel("Value")
     ax[1].legend()
-    ax[2].plot(frames, np.abs(blue), color="blue", label="B")
+    ax[2].plot(frames, b, color="blue", label="B")
     ax[2].set_xlabel("Frames")
     ax[2].set_ylabel("Value")
     ax[2].legend()
     plt.tight_layout()
     plt.show()
 
-def plot_rgb_fft(freqs, red, green, blue, f_min=0.5, f_max=4):
-    fs = 30
-    #start = int(f_min*fs)
-    #stop = int(f_max*fs)
-    start = 0
-    stop = 0
-    if start and stop:
-        freqs = freqs[start:stop]
-        red = red[start:stop]
-        green = green[start:stop]
-        blue = blue[start:stop]
+# Plot the FFT of RGB data over BPM
+def plot_rgb_fft(freqs, r, g, b, f_min=0.5, f_max=4):
     
-    fig, ax = plt.subplots(3, 1)
-    ax[0].plot(freqs, red, color="red", label="R")
-    ax[0].set_xlabel("f")
-    ax[0].set_ylabel("Amplitude")
-    ax[0].legend()
-    ax[1].plot(freqs, green, color="green", label="G")
-    ax[1].set_xlabel("f")
-    ax[1].set_ylabel("Amplitude")
-    ax[1].legend()
-    ax[2].plot(freqs, blue, color="blue", label="B")
-    ax[2].set_xlabel("f")
-    ax[2].set_ylabel("Amplitude")
-    ax[2].legend()
+    # Normalize
+    r = r/np.max(r)
+    g = g/np.max(g)
+    b = b/np.max(b)
+    # Convert frequency limits to BPM
+    bpm_min, bpm_max = f_min * 60, f_max * 60
+
+    # Mask frequencies within the desired range
+    mask = (freqs >= f_min) & (freqs <= f_max)
+    freqs_filtered = freqs[mask]
+    r_filtered, g_filtered, b_filtered = np.abs(r[mask]), np.abs(g[mask]), np.abs(b[mask])
+
+    # Generate tick labels in BPM
+    bpm_ticks = np.linspace(bpm_min, bpm_max, num=20)
+    hz_ticks = bpm_ticks / 60  
+
+    fig, ax = plt.subplots(3, 1, figsize=(8, 6))
+
+    for i, (color, label, signal) in enumerate(zip(["red", "green", "blue"], ["R", "G", "B"], [r_filtered, g_filtered, b_filtered])):
+        # Plot the  max, between f_min and f_max
+        max_index = np.argmax(signal)
+        max_freq = freqs_filtered[max_index]
+        max_bpm = max_freq * 60
+        #signal = 20 * np.log10(signal) # Convert to dB
+        ax[i].plot(freqs_filtered, signal, color=color, label=label)
+        ax[i].plot(max_freq, signal[max_index], "ro", label=f"Max value: {max_bpm:.2f} BPM")
+        ax[i].set_xlabel("Frequency [BPM]")
+        ax[i].set_ylabel("Amplitude (normalized)")
+        ax[i].legend()
+        ax[i].set_xlim(f_min, f_max)
+        ax[i].set_xticks(hz_ticks)
+        ax[i].set_xticklabels([f"{int(bpm)}" for bpm in bpm_ticks])  
+
     plt.tight_layout()
     plt.show()
+
+# Filter RGB data using a bandpass filter (made in CoPilot)
+def bandpass_filter(data, f_low, f_high, fs=30, order=4):
+    from scipy.signal import butter, lfilter
+
+    nyquist = 0.5 * fs
+    low = f_low / nyquist
+    high = f_high / nyquist
+
+    b, a = butter(order, [low, high], btype="band")
+    y = lfilter(b, a, data)
+
+    return y
+
+
+
+#-------------------------------------------------------------------------------------------------------
