@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import sys
+from scipy.signal import butter, lfilter
 
 # Define file paths
 script_dir = os.path.dirname(os.path.abspath(__file__))  # Get script directory
@@ -462,8 +462,6 @@ def plot_rgb_fft(freqs, r, g, b, save=True, filename="rgb_fft", f_min=0.5, f_max
 
 # Filter RGB data using a bandpass filter (made in CoPilot)
 def bandpass_filter(data, f_low=0.5, f_high=4, fs=30, order=4):
-    from scipy.signal import butter, lfilter
-
     nyquist = 0.5 * fs
     low = f_low / nyquist
     high = f_high / nyquist
@@ -496,29 +494,65 @@ def calculate_mean_and_std(data):
 #-------------------------------------------------------------------------------------------------------
 
 # Imports radar data from channel 3 and 5 in csv file
-def import_radar(filename): 
+def import_radar(filename, filter=False): 
     filename = "lab4\\" + filename
     csv_path = os.path.join(csv_dir, filename)
     data = np.loadtxt(csv_path, delimiter=",", skiprows=1)
-    I = data[:, 2]
-    Q = data[:, 4]
+    I = data[:, 3]
+    Q = data[:, 5]
+
+    # Remove DC offset
+    I = I - np.mean(I)
+    Q = Q - np.mean(Q)
+
+    # Fix first sample
+    #I[0] = I[1]
+    #Q[0] = Q[1]
+
+    # High-pass filter
+
+    if filter:
+        cut_off = 1
+        order = 4
+        I = high_pass_filter(I, cut_off, order=order)
+        Q = high_pass_filter(Q, cut_off, order=order)
+
     return I, Q
 
 # Plot radar data over time
-def plot_radar(I, Q, fs=31250, save=True, filename="radar_vals.csv"):
+def plot_radar(I, Q, fs=31250, save=True, split=False, filename="radar_vals.csv"):
     samples = np.arange(0, len(I))
     time = samples / fs
 
     # Plot data in same figure
-    plt.figure(figsize=(10, 5))
-    plt.plot(time, I, label="I")
-    plt.plot(time, Q, label="Q")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Amplitude")
-    plt.legend()
-    plt.grid()
-    plt.title("Radar data over time")
-    plt.tight_layout()
+    if split:
+        fig, ax = plt.subplots(2, figsize=(10, 10))
+        ax[0].plot(time, I, label="I")
+        ax[0].set_xlabel("Time [s]")
+        ax[0].set_ylabel("Amplitude")
+        ax[0].legend()
+        ax[0].grid()
+        ax[0].set_title("I(t)")
+
+        ax[1].plot(time, Q, label="Q", color="orange")
+        ax[1].set_xlabel("Time [s]")
+        ax[1].set_ylabel("Amplitude")
+        ax[1].legend()
+        ax[1].grid()
+        ax[1].set_title("Q(t)")
+
+        plt.tight_layout()
+
+    else:
+        plt.figure(figsize=(10, 5))
+        plt.plot(time, I, label="I")
+        plt.plot(time, Q, label="Q")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Amplitude")
+        plt.legend()
+        plt.grid()
+        plt.title("Radar data over time")
+        plt.tight_layout()
 
     if save:
         plt.savefig(plot_dir + "\\lab4\\" + filename[:-4] + ".png")
@@ -526,24 +560,36 @@ def plot_radar(I, Q, fs=31250, save=True, filename="radar_vals.csv"):
         plt.show()
 
 # Plot radar data over time from file
-def plot_radar_file(filename, fs=31250, save=True):
+def plot_radar_file(filename, fs=31250, filter=False, save=True, split=False):
     
-    I, Q = import_radar(filename)
-    plot_radar(I, Q, fs, save, filename)
+    I, Q = import_radar(filename, filter)
+    plot_radar(I, Q, fs, save, split, filename)
 
 # Perform FFT on radar data
 def radar_fft(I, Q, fs=31250, N=16384):
+
     Sf = np.fft.fft(I + 1j*Q, n=N)
     freqs = np.fft.fftfreq(N, 1/fs)
 
     return freqs, Sf
 
 # Plot radar FFT
-def plot_radar_fft(freqs, Sf, save=True, filename="radar_vals.csv"):
+def plot_radar_fft(freqs, Sf, lim=0, save=True, filename="radar_vals.csv"):
+
+    if lim:
+        mask = (freqs >= -lim) & (freqs <= lim)
+        freqs = freqs[mask]
+        Sf = Sf[mask]
+    
+    # Sort frequencies
+    sorted_indices = np.argsort(freqs)
+    freqs = freqs[sorted_indices]
+    Sf = Sf[sorted_indices]
+
 
     # plot
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-    ax.plot(freqs, np.abs(Sf))
+    ax.plot(freqs, 10*np.log10(np.abs(Sf)))
     ax.set_xlabel("Frequency [Hz]")
     ax.set_ylabel("Amplitude")
     ax.grid()
@@ -555,17 +601,17 @@ def plot_radar_fft(freqs, Sf, save=True, filename="radar_vals.csv"):
         plt.show()
 
 # Plot FFT of radar data from file
-def plot_radar_fft_file(filename, save=True):
+def plot_radar_fft_file(filename, filter=False, lim=0, save=True):
     # Import data
-    I, Q = import_radar(filename)
+    I, Q = import_radar(filename, filter)
 
     # Perform FFT
     freqs, Sf = radar_fft(I, Q)
 
     #Plot data
-    plot_radar_fft(freqs, Sf, save, filename)
+    plot_radar_fft(freqs, Sf, lim, save, filename)
 
-
+# Plot bode plot of band-pass filters 
 def bode_plot(filename, save=True):
     csv_path = os.path.join(csv_dir, "lab4//" + filename)
     data = np.loadtxt(csv_path, delimiter=",", skiprows=1)
@@ -613,4 +659,28 @@ def bode_plot(filename, save=True):
         plt.savefig(plot_dir + "\\lab4\\" + filename[:-4] + "_bode.png")
     else:
         plt.show()
+
+# Apply high-pass filter to radar data
+def high_pass_filter(data, f_cut, fs=31250, order=4):
+
+    nyquist = 0.5 * fs
+    low = f_cut / nyquist
+
+    b, a = butter(order, low, btype="high")
+    y = lfilter(b, a, data)
+    y = y/np.max(y)
+
+    return y
+
+# Find peak in radar FFT data
+def extract_peak_radar(f, Sf, f_min=-1000, f_max=1000):
+    mask = (f >= f_min) & (f <= f_max)
+    f = f[mask]
+    peak = f[np.argmax(np.abs(Sf[mask]))]
+    return peak
+
+# Calculate velocity based on peak frequency
+def calculate_velocity(peak, f_c=24.125e9, c=3e8):
+    v = (c * peak) / (2 * f_c)
+    return v
 #-------------------------------------------------------------------------------------------------------

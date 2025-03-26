@@ -23,7 +23,7 @@ def raspi_import(path, channels=5):
 
 
 # Define file paths
-script_dir = os.path.dirname(os.path.abspath(__file__))  # Get script directory
+script_dir = os.path.dirname(os.path.abspath(__file__))[:-12]  # Get script directory
 bin_dir = os.path.join(script_dir, "bin")  # Bin folder path
 csv_dir = os.path.join(script_dir, "csv")  # CSV folder path
 
