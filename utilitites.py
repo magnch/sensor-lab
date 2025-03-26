@@ -566,7 +566,11 @@ def plot_radar_file(filename, fs=31250, filter=False, save=True, split=False):
     plot_radar(I, Q, fs, save, split, filename)
 
 # Perform FFT on radar data
-def radar_fft(I, Q, fs=31250, N=16384):
+def radar_fft(I, Q, window=False, fs=31250, N=2**25):
+
+    if window:
+        I = I * np.hanning(len(I))
+        Q = Q * np.hanning(len(Q))
 
     Sf = np.fft.fft(I + 1j*Q, n=N)
     freqs = np.fft.fftfreq(N, 1/fs)
@@ -574,10 +578,10 @@ def radar_fft(I, Q, fs=31250, N=16384):
     return freqs, Sf
 
 # Plot radar FFT
-def plot_radar_fft(freqs, Sf, lim=0, save=True, filename="radar_vals.csv"):
+def plot_radar_fft(freqs, Sf, f_min=0, f_max=0, save=True, filename="radar_vals.csv"):
 
-    if lim:
-        mask = (freqs >= -lim) & (freqs <= lim)
+    if f_min or f_max:
+        mask = (freqs >= f_min) & (freqs <= f_max)
         freqs = freqs[mask]
         Sf = Sf[mask]
     
@@ -586,12 +590,15 @@ def plot_radar_fft(freqs, Sf, lim=0, save=True, filename="radar_vals.csv"):
     freqs = freqs[sorted_indices]
     Sf = Sf[sorted_indices]
 
+    # Normalize
+    Sf = Sf / np.max(np.abs(Sf))
+
 
     # plot
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
     ax.plot(freqs, 10*np.log10(np.abs(Sf)))
     ax.set_xlabel("Frequency [Hz]")
-    ax.set_ylabel("Amplitude")
+    ax.set_ylabel("Amplitude relative to max [dB]")
     ax.grid()
     plt.tight_layout()
     
@@ -601,7 +608,7 @@ def plot_radar_fft(freqs, Sf, lim=0, save=True, filename="radar_vals.csv"):
         plt.show()
 
 # Plot FFT of radar data from file
-def plot_radar_fft_file(filename, filter=False, lim=0, save=True):
+def plot_radar_fft_file(filename, filter=False, f_min=0, f_max=0, save=True):
     # Import data
     I, Q = import_radar(filename, filter)
 
@@ -609,7 +616,7 @@ def plot_radar_fft_file(filename, filter=False, lim=0, save=True):
     freqs, Sf = radar_fft(I, Q)
 
     #Plot data
-    plot_radar_fft(freqs, Sf, lim, save, filename)
+    plot_radar_fft(freqs, Sf, f_min, f_max, save, filename)
 
 # Plot bode plot of band-pass filters 
 def bode_plot(filename, save=True):
@@ -683,4 +690,22 @@ def extract_peak_radar(f, Sf, f_min=-1000, f_max=1000):
 def calculate_velocity(peak, f_c=24.125e9, c=3e8):
     v = (c * peak) / (2 * f_c)
     return v
+
+# Do everything
+def radar_all(filename, f_min=0, f_max=0, save=True, window=False):
+    I, Q = import_radar(filename)
+
+    if window:
+        I = I * np.hanning(len(I))
+        Q = Q * np.hanning(len(Q))
+
+    freqs, Sf = radar_fft(I, Q)
+    f_peak = extract_peak_radar(freqs, Sf, f_min=f_min, f_max=f_max)
+    v = calculate_velocity(f_peak)
+
+    print(f"Peak frequency: {f_peak:.2f} Hz")
+    print(f"Velocity: {v:.2f} m/s")
+
+    plot_radar(I, Q, save=save, filename=filename)
+    plot_radar_fft(freqs, Sf, f_min, f_max, save=save, filename=filename)
 #-------------------------------------------------------------------------------------------------------
