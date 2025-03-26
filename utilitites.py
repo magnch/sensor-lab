@@ -495,6 +495,122 @@ def calculate_mean_and_std(data):
 # Lab 4
 #-------------------------------------------------------------------------------------------------------
 
+# Imports radar data from channel 3 and 5 in csv file
+def import_radar(filename): 
+    filename = "lab4\\" + filename
+    csv_path = os.path.join(csv_dir, filename)
+    data = np.loadtxt(csv_path, delimiter=",", skiprows=1)
+    I = data[:, 2]
+    Q = data[:, 4]
+    return I, Q
+
+# Plot radar data over time
+def plot_radar(I, Q, fs=31250, save=True, filename="radar_vals.csv"):
+    samples = np.arange(0, len(I))
+    time = samples / fs
+
+    # Plot data in same figure
+    plt.figure(figsize=(10, 5))
+    plt.plot(time, I, label="I")
+    plt.plot(time, Q, label="Q")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Amplitude")
+    plt.legend()
+    plt.grid()
+    plt.title("Radar data over time")
+    plt.tight_layout()
+
+    if save:
+        plt.savefig(plot_dir + "\\lab4\\" + filename[:-4] + ".png")
+    else:
+        plt.show()
+
+# Plot radar data over time from file
+def plot_radar_file(filename, fs=31250, save=True):
+    
+    I, Q = import_radar(filename)
+    plot_radar(I, Q, fs, save, filename)
+
+# Perform FFT on radar data
+def radar_fft(I, Q, fs=31250, N=16384):
+    Sf = np.fft.fft(I + 1j*Q, n=N)
+    freqs = np.fft.fftfreq(N, 1/fs)
+
+    return freqs, Sf
+
+# Plot radar FFT
+def plot_radar_fft(freqs, Sf, save=True, filename="radar_vals.csv"):
+
+    # plot
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    ax.plot(freqs, np.abs(Sf))
+    ax.set_xlabel("Frequency [Hz]")
+    ax.set_ylabel("Amplitude")
+    ax.grid()
+    plt.tight_layout()
+    
+    if save:
+        plt.savefig(plot_dir + "\\lab4\\" + filename[:-4] + "_fft.png")
+    else:
+        plt.show()
+
+# Plot FFT of radar data from file
+def plot_radar_fft_file(filename, save=True):
+    # Import data
+    I, Q = import_radar(filename)
+
+    # Perform FFT
+    freqs, Sf = radar_fft(I, Q)
+
+    #Plot data
+    plot_radar_fft(freqs, Sf, save, filename)
 
 
+def bode_plot(filename, save=True):
+    csv_path = os.path.join(csv_dir, "lab4//" + filename)
+    data = np.loadtxt(csv_path, delimiter=",", skiprows=1)
+    f = data[:, 0]
+    V_in = data[:, 1]
+    V_out = data[:, 2]
+    phi = data[:, 3]
+
+    # Find cut-off frequencies for band-pass filter
+    out_max = max(V_out)
+    for i, val in enumerate(V_out):
+        if val >= out_max - 3:
+            f_low = f[i]
+            break
+    
+    for i, val in enumerate(V_out[::-1]):
+        if val >= out_max - 3:
+            f_high = f[-i]
+            break
+
+    # Plot data
+    fig, ax = plt.subplots(2, figsize=(10, 10))
+    ax[0].semilogx(f, V_out, label="Output")
+    ax[0].semilogx(f, V_in, label="Input")
+    # Mark cutoff
+    ax[0].axvline(f_low, color="red", linestyle="--", label=f"Low cut-off: {f_low:.2f} Hz")
+    ax[0].axvline(f_high, color="red", linestyle="--", label=f"High cut-off: {f_high:.2f} Hz")
+    #Mark gain
+    ax[0].axhline(out_max, color="black", linestyle="--", label=f"Gain: {out_max:.2f}")
+    ax[0].set_title("Magnitude response")
+    ax[0].set_xlabel("f [Hz]")
+    ax[0].set_ylabel("Amplitude relative to input[dB]")
+    ax[0].grid()
+    ax[0].legend()
+
+    ax[1].semilogx(f, phi, label="Phase")
+    ax[1].set_title("Phase response")
+    ax[1].set_xlabel("f [Hz]")
+    ax[1].set_ylabel("φ [°]")
+    ax[1].grid()
+    ax[1].legend()
+    plt.tight_layout()
+
+    if save:
+        plt.savefig(plot_dir + "\\lab4\\" + filename[:-4] + "_bode.png")
+    else:
+        plt.show()
 #-------------------------------------------------------------------------------------------------------
