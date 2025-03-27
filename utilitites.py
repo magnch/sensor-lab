@@ -708,4 +708,6 @@ def radar_all(filename, f_min=0, f_max=0, save=True, window=False):
 
     plot_radar(I, Q, save=save, filename=filename)
     plot_radar_fft(freqs, Sf, f_min, f_max, save=save, filename=filename)
+
+    return v
 #-------------------------------------------------------------------------------------------------------
