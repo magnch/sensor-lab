@@ -566,14 +566,14 @@ def plot_radar_file(filename, fs=31250, filter=False, save=True, split=False):
     plot_radar(I, Q, fs, save, split, filename)
 
 # Perform FFT on radar data
-def radar_fft(I, Q, window=False, fs=31250, N=2**25):
+def radar_fft(I, Q, window=False, fs=31250, N=2**20):
 
     if window:
         I = I * np.hanning(len(I))
         Q = Q * np.hanning(len(Q))
 
     Sf = np.fft.fft(I + 1j*Q, n=N)
-    freqs = np.fft.fftfreq(N, 1/fs)
+    freqs = -np.fft.fftfreq(N, 1/fs)
 
     return freqs, Sf
 
