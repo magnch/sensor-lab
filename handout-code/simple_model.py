@@ -1,8 +1,8 @@
 import numpy as np
 
 
-muabo = np.genfromtxt("Optikk-lab-filer\muabo.txt", delimiter=",") 
-muabd = np.genfromtxt("Optikk-lab-filer\muabd.txt", delimiter=",")
+muabo = np.genfromtxt("handout-code\\muabo.txt", delimiter=",") 
+muabd = np.genfromtxt("handout-code\\muabd.txt", delimiter=",")
 
 red_wavelength = 600 # Replace with wavelength in nanometres
 green_wavelength = 520 # Replace with wavelength in nanometres
@@ -37,14 +37,14 @@ musr = 100 * (17.6*(wavelength/500)**-4 + 18.78*(wavelength/500)**-0.22)
 
 pen_depth = np.sqrt(1/(3*(musr+mua)*mua))
 
-#d = 0.0171
-d = 3e-4
+d = 0.0171
+#d = 3e-4
 
 C = np.sqrt(3*(musr+mua)*mua)
 
 print(f"Penetrasjonsdybde: \n Rødt: {pen_depth[0]}, Grønt: {pen_depth[1]}, Blått: {pen_depth[2]}")
 
-transmittans = np.e**(-C*d)
+transmittans = np.exp(-C*d)
 
 print(f"Transmittans: \n Rødt: {transmittans[0]}, Grønt: {transmittans[1]}, Blått: {transmittans[2]}")
 
