@@ -1,55 +1,28 @@
 from utilitites import *
 
-filebase = "transmittans_rapport_måling_"
+filebase = "reflektans_rapport_måling_"
 
 rgb_peaks = np.zeros((5, 3))
 filter = True
-window = False
-robusthet = False
+robusthet = True
 save = True
 
 f_low = 0.75
 f_high = 4
 
 
-# Loop over all files, plot RGB values and FFT for each 
-for i in range(5):
-    filename = filebase + str(i+1) + ".csv"
-    r, g, b = import_rgb(filename)
+def plot_all():
 
-    # Apply bandpass filter
-    if filter:
-        r = bandpass_filter(r, f_min=f_low, f_max=f_high)
-        g = bandpass_filter(g, f_min=f_low, f_max=f_high)
-        b = bandpass_filter(b, f_min=f_low, f_max=f_high)
-
-    if window:
-        r, g, b = window_rgb(r, g, b)
-        filename = filename[:-4] + "_windowed.csv"
-
-    freqs, r_f, g_f, b_f = rgb_fft(r, g, b)
-    plot_rgb(r, g, b, filename=filename, save=save)
-    print(f"Data for {filename} plotted.")
-    plot_rgb_fft(freqs, r_f, g_f, b_f, filename=filename, save=save, f_min=f_low, f_max=f_high)
-    print(f"FFT for {filename} plotted.")
-    print("---------------------------------------------------")
-    # Extract peak values for each color
-    rgb_peaks[i] = extract_peak_rgb(freqs, r_f, g_f, b_f, f_min=f_low, f_max=f_high)
-
-
-if robusthet:
-    # Loop over all robusthet files, plot RGB values and FFT for each
-    for maling in ["lys", "hoy_puls"]:
-        filename = "robusthet_" + maling + ".csv" 
+    # Loop over all files, plot RGB values and FFT for each 
+    for i in range(5):
+        filename = filebase + str(i+1) + ".csv"
         r, g, b = import_rgb(filename)
 
+        # Apply bandpass filter
         if filter:
             r = bandpass_filter(r, f_min=f_low, f_max=f_high)
             g = bandpass_filter(g, f_min=f_low, f_max=f_high)
             b = bandpass_filter(b, f_min=f_low, f_max=f_high)
-
-        if window:
-            r, g, b = window_rgb(r, g, b)
 
         freqs, r_f, g_f, b_f = rgb_fft(r, g, b)
         plot_rgb(r, g, b, filename=filename, save=save)
@@ -57,11 +30,46 @@ if robusthet:
         plot_rgb_fft(freqs, r_f, g_f, b_f, filename=filename, save=save, f_min=f_low, f_max=f_high)
         print(f"FFT for {filename} plotted.")
         print("---------------------------------------------------")
+        # Extract peak values for each color
+        rgb_peaks[i] = extract_peak_rgb(freqs, r_f, g_f, b_f, f_min=f_low, f_max=f_high)
 
 
-# Calculate mean and std for each color
-for i, color in enumerate(["R", "G", "B"]):
+    if robusthet:
+        # Loop over all robusthet files, plot RGB values and FFT for each
+        for maling in ["lys", "hoy_puls"]:
+            filename = "robusthet_" + maling + ".csv" 
+            r, g, b = import_rgb(filename)
+
+            if filter:
+                r = bandpass_filter(r, f_min=f_low, f_max=f_high)
+                g = bandpass_filter(g, f_min=f_low, f_max=f_high)
+                b = bandpass_filter(b, f_min=f_low, f_max=f_high)
+
+
+            freqs, r_f, g_f, b_f = rgb_fft(r, g, b)
+            plot_rgb(r, g, b, filename=filename, save=save)
+            print(f"Data for {filename} plotted.")
+            plot_rgb_fft(freqs, r_f, g_f, b_f, filename=filename, save=save, f_min=f_low, f_max=f_high)
+            print(f"FFT for {filename} plotted.")
+            print("---------------------------------------------------")
+
+def plot_raw():
+    # Loop over all files, plot RGB values and FFT for each 
+    for i in range(5):
+        filename = filebase + str(i+1) + ".csv"
+        r, g, b = import_rgb(filename)
+        filename = filebase + str(i+1) + "_raw.png"
+
+        plot_rgb(r, g, b, filename=filename, save=save)
+        print(f"Data for {filename} plotted.")
+        print("---------------------------------------------------")
+
+def mean_std_all():
     # Calculate mean and std for each color
-    mean, std = calculate_mean_and_std(rgb_peaks[:, i])
-    print(f"Mean for {color}: {mean:.2f}")
-    print(f"Std for {color}: {std:.2f}")
+    for i, color in enumerate(["R", "G", "B"]):
+    # Calculate mean and std for each color
+        mean, std = calculate_mean_and_std(rgb_peaks[:, i])
+        print(f"Mean for {color}: {mean:.2f}")
+        print(f"Std for {color}: {std:.2f}")
+
+plot_raw()

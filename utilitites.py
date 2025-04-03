@@ -421,9 +421,9 @@ def plot_rgb(r, g, b, save=True, filename="rgb_vals"):
 def plot_rgb_fft(freqs, r, g, b, save=True, filename="rgb_fft", f_min=0.75, f_max=4):
     
     # Normalize
-    r = r/np.max(r)
-    g = g/np.max(g)
-    b = b/np.max(b)
+    r = r/np.max(np.abs(r))
+    g = g/np.max(np.abs(g))
+    b = b/np.max(np.abs(b))
     # Convert frequency limits to BPM
     bpm_min, bpm_max = f_min * 60, f_max * 60
 
@@ -463,6 +463,7 @@ def plot_rgb_fft(freqs, r, g, b, save=True, filename="rgb_fft", f_min=0.75, f_ma
 
 # Filter RGB data using a FIR bandpass filter
 def bandpass_filter(data, f_min=0.75, f_max=4, fs=30, order=99):
+
     fir_coeffs = firwin(order, [f_min, f_max], pass_zero=False, fs=fs)
     y = filtfilt(fir_coeffs, 1.0, data)
 
