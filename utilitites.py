@@ -472,6 +472,13 @@ def bandpass_filter(data, f_low=0.5, f_high=4, fs=30, order=4):
 
     return y
 
+# Apply window function to RGB data
+def window_rgb(r, g, b):
+    r = np.hanning(len(r)) * r
+    g = np.hanning(len(g)) * g
+    b = np.hanning(len(b)) * b
+    return r, g, b
+
 # Extract peak from RGB FFT data
 def extract_peak_rgb(f, r, g, b, f_min=0.5, f_max=4):
     mask = (f >= f_min) & (f <= f_max)

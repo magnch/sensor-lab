@@ -5,8 +5,10 @@ import os
 import csv
 
 # Define file paths
-filename = "./csv/ny_transmittans_120s.csv"
-output_file = "./csv/ny_transmittans_måling_"
+filename = "./csv/lab3/transmittans_rapport.csv"
+output_file = filename[:-4] + "_måling_"
+length = 300   # Number of lines in each part
+offset = 293
 
 # Read data from file
 data = []
@@ -15,12 +17,12 @@ with open(filename, "r") as file:
     for row in reader:
         data.append(row)
 
-data = data[592:]
-print(data)
+data = data[offset:]
+print(len(data))
 
 # Split data into five parts
 for i in range(5):
-    part = data[i * 600:(i + 1) * 600]
+    part = data[i * length:(i + 1) * length]
     part_filename = output_file + str(i + 1) + ".csv"
     with open(part_filename, "w", newline="") as file:
         writer = csv.writer(file)

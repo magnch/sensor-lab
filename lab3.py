@@ -1,9 +1,10 @@
 from utilitites import *
 
-filebase = "transmittans_måling_"
+filebase = "transmittans_rapport_måling_"
 
 rgb_peaks = np.zeros((5, 3))
 filter = True
+window = True
 
 # Loop over all files, plot RGB values and FFT for each 
 for i in range(5):
@@ -15,6 +16,10 @@ for i in range(5):
         r = bandpass_filter(r)
         g = bandpass_filter(g)
         b = bandpass_filter(b)
+
+    if window:
+        r, g, b = window_rgb(r, g, b)
+        filename = filename[:-4] + "_windowed.csv"
 
     freqs, r_f, g_f, b_f = rgb_fft(r, g, b)
     plot_rgb(r, g, b, filename)
@@ -35,6 +40,9 @@ for maling in ["lys", "hoy_puls"]:
         g = bandpass_filter(g)
         b = bandpass_filter(b)
 
+    if window:
+        r, g, b = window_rgb(r, g, b)
+
     freqs, r_f, g_f, b_f = rgb_fft(r, g, b)
     plot_rgb(r, g, b, filename)
     print(f"Data for {filename} plotted.")
@@ -49,3 +57,25 @@ for i, color in enumerate(["R", "G", "B"]):
     print(f"Mean for {color}: {mean:.2f}")
     print(f"Std for {color}: {std:.2f}")
 
+
+
+"""
+
+filter = False
+
+filename = "robusthet_lys.csv"
+r, g, b = import_rgb(filename)
+if filter:
+    r = bandpass_filter(r)
+    g = bandpass_filter(g)
+    b = bandpass_filter(b)
+
+r, g, b = window_rgb(r, g, b)
+freqs, r_f, g_f, b_f = rgb_fft(r, g, b)
+plot_rgb(r, g, b, filename=filename, save=False)
+print(f"Data for {filename} plotted.")
+plot_rgb_fft(freqs, r_f, g_f, b_f, filename=filename, save=False, f_min=0.5, f_max=2.5)
+print(f"FFT for {filename} plotted.")
+
+
+"""
