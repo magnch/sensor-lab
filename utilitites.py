@@ -396,19 +396,19 @@ def rgb_fft(r, g, b, N=16384):
 # Plot RGB data over frames
 def plot_rgb(r, g, b, save=True, filename="rgb_vals"):
     frames = np.arange(0, len(r))
-    #duration = frames/30
+    time = frames / 30  # Convert to seconds
     fig, ax = plt.subplots(3, 1)
-    ax[0].plot(frames, r, color="red", label="R")
-    ax[0].set_xlabel("Frames")
-    ax[0].set_ylabel("Value")
+    ax[0].plot(time, r, color="red", label="R")
+    ax[0].set_xlabel("Time [s]")
+    ax[0].set_ylabel("Amplitude")
     ax[0].legend()
-    ax[1].plot(frames, g, color="green", label="G")
-    ax[1].set_xlabel("Frames")
-    ax[1].set_ylabel("Value")
+    ax[1].plot(time, g, color="green", label="G")
+    ax[1].set_xlabel("Time [s]")
+    ax[1].set_ylabel("Amplitude")
     ax[1].legend()
-    ax[2].plot(frames, b, color="blue", label="B")
-    ax[2].set_xlabel("Frames")
-    ax[2].set_ylabel("Value")
+    ax[2].plot(time, b, color="blue", label="B")
+    ax[2].set_xlabel("Time [s]")
+    ax[2].set_ylabel("Amplitude")
     ax[2].legend()
     plt.tight_layout()
 
@@ -460,7 +460,6 @@ def plot_rgb_fft(freqs, r, g, b, save=True, filename="rgb_fft", f_min=0.75, f_ma
     else:
         plt.show()
 
-
 # Filter RGB data using a FIR bandpass filter
 def bandpass_filter(data, f_min=0.75, f_max=4, fs=30, order=99):
 
@@ -492,6 +491,34 @@ def calculate_mean_and_std(data):
     std = np.std(data)
     return mean, std
 
+def calculate_snr(fft_data, freqs, f_signal, duration=10):
+
+    # Frequency resolution
+    df = 1/duration
+    print(f"Frequency resolution: {df} Hz")
+
+    # Define signal bin
+    signal_bin = (freqs >= f_signal - df) & (freqs <= f_signal + df)
+    # Define noise bin
+    noise_bin = (freqs < f_signal - df) | (freqs > f_signal + df)
+
+    # Calculate signal power
+    signal_power = np.mean(np.abs(fft_data[signal_bin])**2)
+    # Calculate noise power
+    noise_power = np.mean(np.abs(fft_data[noise_bin])**2)
+    # Calculate SNR
+    snr = 10 * np.log10(signal_power / noise_power)
+    
+    return snr
+
+def calculate_snr_rgb(r, g, b, freqs, f_signal, duration=10):
+    r_snr = calculate_snr(r, freqs, f_signal, duration=duration)
+    g_snr = calculate_snr(g, freqs, f_signal, duration=duration)
+    b_snr = calculate_snr(b, freqs, f_signal, duration=duration)
+
+    print(f"SNR for R: {r_snr:.2f} dB")
+    print(f"SNR for G: {g_snr:.2f} dB")
+    print(f"SNR for B: {b_snr:.2f} dB")
 
 #-------------------------------------------------------------------------------------------------------
 # Lab 4

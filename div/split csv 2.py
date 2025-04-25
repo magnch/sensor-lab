@@ -3,7 +3,7 @@ import csv
 import numpy as np
 
 # Define file paths
-filename = "./csv/lab3/transmittans_rapport.csv"
+filename = "./csv/lab3/reflektans_rapport.csv"
 output_file = filename[:-4] + "_måling_"
 length = 300   # Number of lines in each part
 offset = 100
